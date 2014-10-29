@@ -49,7 +49,7 @@ class SSEWriteableChannel {
     }
 
 
-    public CompletableFuture<Integer> writeEventAsnyc(SSEEvent event) {       
+    public CompletableFuture<Integer> writeEventAsync(SSEEvent event) {       
         CompletableFuture<Integer> result = new CompletableFuture<>();
         
         try {
