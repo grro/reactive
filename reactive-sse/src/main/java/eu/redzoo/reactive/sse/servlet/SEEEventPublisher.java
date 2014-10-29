@@ -83,7 +83,7 @@ class SEEEventPublisher implements Publisher<SSEEvent> {
         
         @Override
         public void request(long n) {
-            channel.readNextAsync()
+            channel.readEventAsync()
                    .thenAccept(event -> subscriber.onNext(event));
         }
     }

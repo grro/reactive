@@ -75,7 +75,7 @@ class SSEReadableChannel {
     }
 
     
-    public CompletableFuture<SSEEvent> readNextAsync() {
+    public CompletableFuture<SSEEvent> readEventAsync() {
         CompletableFuture<SSEEvent> pendingRead = new CompletableFuture<SSEEvent>();
         
         synchronized (pendingReads) {   
