@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+  <classpathentry kind="src" path="src/test/java" output="target/test-classes" including="**/*.java"/>
+  <classpathentry kind="src" path="src/main/java" including="**/*.java"/>
+  <classpathentry kind="src" path="src/main/resources" excluding="**/*.java"/>
+  <classpathentry kind="output" path="target/classes"/>
+  <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+  <classpathentry kind="var" path="M2_REPO/org/apache/kafka/kafka-clients/0.8.2-beta/kafka-clients-0.8.2-beta.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.7.6/slf4j-api-1.7.6.jar" sourcepath="M2_REPO/org/slf4j/slf4j-api/1.7.6/slf4j-api-1.7.6-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/org/slf4j/slf4j-api/1.7.6/slf4j-api-1.7.6-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/net/jpountz/lz4/lz4/1.2.0/lz4-1.2.0.jar" sourcepath="M2_REPO/net/jpountz/lz4/lz4/1.2.0/lz4-1.2.0-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/net/jpountz/lz4/lz4/1.2.0/lz4-1.2.0-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/xerial/snappy/snappy-java/1.1.1.3/snappy-java-1.1.1.3.jar"/>
+  <classpathentry kind="src" path="/reactive-stream"/>
+  <classpathentry kind="var" path="M2_REPO/org/reactivestreams/reactive-streams/0.4.0/reactive-streams-0.4.0.jar" sourcepath="M2_REPO/org/reactivestreams/reactive-streams/0.4.0/reactive-streams-0.4.0-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/org/reactivestreams/reactive-streams/0.4.0/reactive-streams-0.4.0-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/google/guava/guava/18.0/guava-18.0.jar" sourcepath="M2_REPO/com/google/guava/guava/18.0/guava-18.0-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/com/google/guava/guava/18.0/guava-18.0-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="src" path="/kafka-test"/>
+  <classpathentry kind="var" path="M2_REPO/org/apache/kafka/kafka_2.9.2/0.8.2-beta/kafka_2.9.2-0.8.2-beta.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/scala-lang/scala-library/2.9.2/scala-library-2.9.2.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/yammer/metrics/metrics-core/2.2.0/metrics-core-2.2.0.jar" sourcepath="M2_REPO/com/yammer/metrics/metrics-core/2.2.0/metrics-core-2.2.0-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/com/yammer/metrics/metrics-core/2.2.0/metrics-core-2.2.0-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/apache/zookeeper/zookeeper/3.4.6/zookeeper-3.4.6.jar" sourcepath="M2_REPO/org/apache/zookeeper/zookeeper/3.4.6/zookeeper-3.4.6-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/org/apache/zookeeper/zookeeper/3.4.6/zookeeper-3.4.6-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-log4j12/1.6.1/slf4j-log4j12-1.6.1.jar"/>
+  <classpathentry kind="var" path="M2_REPO/log4j/log4j/1.2.16/log4j-1.2.16.jar"/>
+  <classpathentry kind="var" path="M2_REPO/jline/jline/0.9.94/jline-0.9.94.jar" sourcepath="M2_REPO/jline/jline/0.9.94/jline-0.9.94-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/junit/junit/4.11/junit-4.11.jar" sourcepath="M2_REPO/junit/junit/4.11/junit-4.11-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/junit/junit/4.11/junit-4.11-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/io/netty/netty/3.7.0.Final/netty-3.7.0.Final.jar" sourcepath="M2_REPO/io/netty/netty/3.7.0.Final/netty-3.7.0.Final-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/io/netty/netty/3.7.0.Final/netty-3.7.0.Final-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/net/sf/jopt-simple/jopt-simple/3.2/jopt-simple-3.2.jar" sourcepath="M2_REPO/net/sf/jopt-simple/jopt-simple/3.2/jopt-simple-3.2-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/net/sf/jopt-simple/jopt-simple/3.2/jopt-simple-3.2-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/com/101tec/zkclient/0.3/zkclient-0.3.jar" sourcepath="M2_REPO/com/101tec/zkclient/0.3/zkclient-0.3-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/com/101tec/zkclient/0.3/zkclient-0.3-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+  <classpathentry kind="var" path="M2_REPO/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar" sourcepath="M2_REPO/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/C:/Users/grro/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
+</classpath>
