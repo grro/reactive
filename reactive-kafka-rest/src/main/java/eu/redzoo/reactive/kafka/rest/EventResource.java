@@ -105,6 +105,8 @@ public class EventResource implements Closeable {
                                      @Suspended AsyncResponse asyncResponse,
                                      @PathParam("topic") String topic) throws IOException {
         
+        servletResponse.setHeader("Content-Type", "text/event-stream");
+        
         Streams.newStream(Kafkas.newPublisher(topic, ImmutableMap.<String, String>builder().putAll(producerConfig).put("group.id", groupid).build()))
                .map(message -> SSEEvent.newEvent().id(message.getId()).data(message.getData()))
                .consume(ServerSentEvents.newSubscriber(servletResponse.getOutputStream(), executor));

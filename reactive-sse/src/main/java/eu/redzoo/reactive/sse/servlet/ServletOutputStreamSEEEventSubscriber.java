@@ -202,6 +202,8 @@ class ServletOutputStreamSEEEventSubscriber implements Subscriber<SSEEvent> {
         
 
         private boolean isWritePossible() {
+            
+            // Unfortunately the Servlet 3.1 spec left it open how many bytes can be written
             try {
                 return out.isReady();
             } catch (IllegalStateException ise)  {
