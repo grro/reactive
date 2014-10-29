@@ -17,6 +17,7 @@ package eu.redzoo.reactive.kafka.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +40,7 @@ public class Environment {
     
     private final ImmutableMap<String, String> configs; 
     
+    
     public Environment(String appname) {
         configs = load(appname);
     }
@@ -58,42 +60,42 @@ public class Environment {
     
     
     private static ImmutableMap<String, String> load(String appname) {
+
+        // get the location url
+        Optional<URL> optionalUrl = Optional.empty();
+        try {
+            String location = System.getProperty("reactive-kafka-rest");
+            optionalUrl = Optional.of((location == null) ? Resources.getResource(appname + ".properties")
+                                                         : new URL(location));
+        } catch (MalformedURLException mue) {
+            LOG.warning("error occured by loading config " + appname + " " + mue.toString());
+        }
+            
         
-        Optional<URL> props = readResource(appname + ".properties");
-        Optional<ImmutableMap<String, String>> configs = props.map(url -> loadProperties(url));
-
-        return configs.orElseGet(ImmutableMap::of);
-    }
-    
-    
-    private static Optional<URL> readResource(String resourcename) {
-        URL url = Resources.getResource(resourcename);
-
-        return Optional.ofNullable(url);
+        // load the config 
+        return optionalUrl.map(url -> loadProperties(url))
+                          .orElseGet(ImmutableMap::of);
     }
 
-
+    
     
     private static ImmutableMap<String, String> loadProperties(URL url) {
-        Properties props = new Properties();
-            
+        Map<String, String> configs = Maps.newHashMap();
+        
         InputStream is = null;
         try {
             is = url.openStream();
+            Properties props = new Properties();
             props.load(is);
             
-            Map<String, String> map = Maps.newHashMap();
-            props.forEach((key, value) -> map.put(key.toString(), value.toString()));
-            
-            return ImmutableMap.copyOf(map);
-            
+            props.forEach((key, value) -> configs.put(key.toString(), value.toString()));            
         } catch (IOException ioe) {
             LOG.warning("error occured reading properties file " + url + " " + ioe.toString());
         } finally {
             Closeables.closeQuietly(is);
         }
         
-        return ImmutableMap.of();
+        return ImmutableMap.copyOf(configs);
     }
      
 }

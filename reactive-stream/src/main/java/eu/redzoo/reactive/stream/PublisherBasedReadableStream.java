@@ -93,17 +93,21 @@ public class PublisherBasedReadableStream<T> implements ReadableStream<T>, Subsc
     public void cancel() {
         subscriptionRef.get().cancel();
     }
+
     
-  
+    @Override
+    public <V> PublisherBasedReadableStream<V> map(Function<? super T, ? extends V> fn) {
+        return new MappingReadableStream<>(this, fn);
+    }
+
     
+    @Override
     public void consume(Subscriber<? super T> subscriber) {
         isAutoRequest.set(false);
 
-        consume(element -> subscriber.onNext(element), 
-                error -> subscriber.onError(error));
+        consume(element -> subscriber.onNext(element), error -> subscriber.onError(error));
         subscriber.onSubscribe(this);
     }
-    
     
     
     @Override
@@ -111,6 +115,7 @@ public class PublisherBasedReadableStream<T> implements ReadableStream<T>, Subsc
         consume(consumer, errorConsumerRef.get());
     }
 
+    
     @Override
     public void consume(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer) {
         this.consumerRef.set(consumer);
@@ -124,12 +129,11 @@ public class PublisherBasedReadableStream<T> implements ReadableStream<T>, Subsc
     }
     
     
+    
     protected void onConsumingStarted() {      
-        
     }
       
     
-
     protected Consumer<? super T> getConsumer() {
        return consumerRef.get();  
     }
@@ -139,11 +143,6 @@ public class PublisherBasedReadableStream<T> implements ReadableStream<T>, Subsc
         return errorConsumerRef.get();  
     }
     
-
-    @Override
-    public <V> PublisherBasedReadableStream<V> map(Function<? super T, ? extends V> fn) {
-        return new MappingReadableStream<>(this, fn);
-    }
 
 
     private class DefaultErrorConsumer implements Consumer<Throwable> {
@@ -186,12 +185,11 @@ public class PublisherBasedReadableStream<T> implements ReadableStream<T>, Subsc
     
     
     private static final class MappingReadableStream<T, V> extends PublisherBasedReadableStream<V> {
-
         private final ReadableStream<T> underlyingStream; 
         private final Function<? super T, ? extends V> fn;
 
         MappingReadableStream(PublisherBasedReadableStream<T> underlyingStream, Function<? super T, ? extends V> fn) {
-            super(new SingleSubscribePublisherAdpater<>(underlyingStream));
+            super(new SingleSubscribePublisherAdapter<>(underlyingStream));
             this.underlyingStream = underlyingStream;
             this.fn = fn;
         }
@@ -205,10 +203,10 @@ public class PublisherBasedReadableStream<T> implements ReadableStream<T>, Subsc
     
     
     
-    private static final class SingleSubscribePublisherAdpater<T> implements Publisher<T> {
+    private static final class SingleSubscribePublisherAdapter<T> implements Publisher<T> {
         private final Subscription subscription;
         
-        public SingleSubscribePublisherAdpater(Subscription subscription) {
+        public SingleSubscribePublisherAdapter(Subscription subscription) {
             this.subscription = subscription;
         }
         

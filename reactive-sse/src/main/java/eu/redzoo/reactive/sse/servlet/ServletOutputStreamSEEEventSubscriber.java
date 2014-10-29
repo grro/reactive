@@ -178,7 +178,7 @@ class ServletOutputStreamSEEEventSubscriber implements Subscriber<SSEEvent> {
             try {
                 synchronized (out) {
                     byte[] data = event.toWire().getBytes("UTF-8");
-                    out.write(data);
+                    out.write(event.toWire().getBytes("UTF-8"));
                     out.flush();
                     
                     result.complete(data.length);
@@ -230,7 +230,8 @@ class ServletOutputStreamSEEEventSubscriber implements Subscriber<SSEEvent> {
         private final class ServletWriteListener implements WriteListener {
 
             @Override
-            public void onWritePossible() throws IOException {                
+            public void onWritePossible() throws IOException {    
+                
                 synchronized (whenWritePossibles) {
                     whenWritePossibles.forEach(whenWritePossible -> whenWritePossible.complete(null));
                     whenWritePossibles.clear();

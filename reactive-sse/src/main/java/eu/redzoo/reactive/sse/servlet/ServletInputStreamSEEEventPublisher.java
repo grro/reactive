@@ -19,12 +19,11 @@ package eu.redzoo.reactive.sse.servlet;
 
 
 
+import java.io.FilterInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -36,15 +35,15 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import com.google.common.collect.Lists;
-import com.google.common.io.Closeables;
 
 import eu.redzoo.reactive.sse.SSEEvent;
-import eu.redzoo.reactive.sse.ServerSentEventParser;
+import eu.redzoo.reactive.sse.ServerSentEventInputStream;
 
 
 
 
 class ServletInputStreamSEEEventPublisher implements Publisher<SSEEvent> {     
+    
     private final AtomicReference<Optional<Subscriber<? super SSEEvent>>> subscriberRef = new AtomicReference<>(Optional.empty());
     private final ServletInputStream in;
     
@@ -59,7 +58,7 @@ class ServletInputStreamSEEEventPublisher implements Publisher<SSEEvent> {
         
         synchronized (subscriberRef) {     
             if (subscriberRef.get().isPresent()) {
-                throw new IllegalStateException("subscriber already registered (publisher does not support multi-subscriptions)");
+                throw new IllegalStateException("subscriber is already registered (publisher does not support multi-subscriptions)");
             } 
 
             subscriberRef.set(Optional.of(subscriber));
@@ -72,28 +71,28 @@ class ServletInputStreamSEEEventPublisher implements Publisher<SSEEvent> {
     
     
     private static final class SEEEventReaderSubscription implements Subscription {
-        private final Network network;
+       
+        private final ServletServerSentEventChannel channel;
         private final Subscriber<? super SSEEvent> subscriber;
-
         
        
         public SEEEventReaderSubscription(ServletInputStream in, Subscriber<? super SSEEvent> subscriber) {
             this.subscriber = subscriber;
-            this.network = new Network(in,                                   // servlet input stream
-                                       error -> subscriber.onError(error),   // error consumer
-                                       Void -> subscriber.onComplete());     // completion consumer         
+            this.channel = new ServletServerSentEventChannel(in,                                   // servlet input stream
+                                                             error -> subscriber.onError(error),   // error consumer
+                                                             Void -> subscriber.onComplete());     // completion consumer         
         }
         
                
         @Override
         public void cancel() {
-            network.close();
+            channel.close();
         }
 
         
         @Override
         public void request(long n) {
-            network.readNextAsync()
+            channel.readNextAsync()
                    .thenAccept(event -> subscriber.onNext(event));
         }
     }
@@ -101,28 +100,20 @@ class ServletInputStreamSEEEventPublisher implements Publisher<SSEEvent> {
     
     
 
-    private static final class Network {
+    private static final class ServletServerSentEventChannel {
         private final Queue<CompletableFuture<SSEEvent>> pendingReads = Lists.newLinkedList();
-        private final ConcurrentLinkedQueue<SSEEvent> bufferedEvents = new ConcurrentLinkedQueue<>();
-        
-        private final Object readLock = new Object();
 
-        private final ServerSentEventParser parser = new ServerSentEventParser();
+        private final ServerSentEventInputStream serverSentEventsStream;
         
-        private final byte buf[] = new byte[1024];
-        private int len = -1;
-        
-        
-        private final ServletInputStream in;
         private final Consumer<Throwable> errorConsumer;
         private final Consumer<Void> completionConsumer;
 
         
         
-        public Network(ServletInputStream in, Consumer<Throwable> errorConsumer, Consumer<Void> completionConsumer) {
-            this.in = in;
+        public ServletServerSentEventChannel(ServletInputStream in, Consumer<Throwable> errorConsumer, Consumer<Void> completionConsumer) {
             this.errorConsumer = errorConsumer;
             this.completionConsumer = completionConsumer;
+            this.serverSentEventsStream = new ServerSentEventInputStream(new NonBlockingInputStream(in));
             
             in.setReadListener(new ServletReadListener());
         }
@@ -137,15 +128,63 @@ class ServletInputStreamSEEEventPublisher implements Publisher<SSEEvent> {
             
             @Override
             public void onError(Throwable t) {
-                Network.this.onError(t);
+                ServletServerSentEventChannel.this.onError(t);
             }
             
             @Override
             public void onDataAvailable() throws IOException {
-                consumeNetworkAndHandlePendingReads();
+                proccessPendingReads();
             }
         }
 
+        
+        public CompletableFuture<SSEEvent> readNextAsync() {
+            CompletableFuture<SSEEvent> pendingRead = new CompletableFuture<SSEEvent>();
+            
+            synchronized (pendingReads) {   
+                
+                try {
+                    // reading has to be processed inside the sync block to avoid shuffling events 
+                    Optional<SSEEvent> optionalEvent = serverSentEventsStream.next();
+                    
+                    // got an event?
+                    if (optionalEvent.isPresent()) {
+                        pendingRead.complete(optionalEvent.get());
+                     
+                    // no, queue the pending read request    
+                    // will be handled by performing the read listener's onDataAvailable callback     
+                    } else {
+                        pendingReads.add(pendingRead);
+                    }
+                    
+                } catch (IOException | RuntimeException t) {
+                    onError(t);
+                }
+            }
+            
+            return pendingRead;
+        }
+        
+        
+        private void proccessPendingReads() {
+            
+            synchronized (pendingReads) {
+                
+                try {
+                    while(!pendingReads.isEmpty()) {
+                        Optional<SSEEvent> optionalEvent = serverSentEventsStream.next();
+                        if (optionalEvent.isPresent()) {
+                            pendingReads.poll().complete(optionalEvent.get());
+                        } else {
+                            return;
+                        }
+                    }
+                } catch (IOException | RuntimeException t) {
+                    onError(t);
+                }
+            }
+        }
+        
         
         private void onError(Throwable t)  {
             errorConsumer.accept(t);
@@ -154,75 +193,51 @@ class ServletInputStreamSEEEventPublisher implements Publisher<SSEEvent> {
         
         
         public void close() {
-            Closeables.closeQuietly(in);
-            pendingReads.clear();
-            bufferedEvents.clear();
+            serverSentEventsStream.close();
+            
+            synchronized (pendingReads) { 
+                pendingReads.clear();
+            }
         }
         
         
-        public CompletableFuture<SSEEvent> readNextAsync() {
+        
+        private static final class NonBlockingInputStream extends FilterInputStream  {
+            private final ServletInputStream is;
             
-            CompletableFuture<SSEEvent> pendingRead = new CompletableFuture<SSEEvent>();
-
-            synchronized (readLock) {
-                
-                // buffered available?
-                SSEEvent event = bufferedEvents.poll();
-                
-                // no, try to consume network
-                if (event == null) {
-                    pendingReads.add(pendingRead);
-                    consumeNetworkAndHandlePendingReads(); 
-                    
-                // yes
+            public NonBlockingInputStream(ServletInputStream is) {
+                super(is);
+                this.is = is;
+            }
+          
+            
+            @Override
+            public int read(byte[] b) throws IOException {
+                if (isNetworkdataAvailable()) {
+                    return super.read(b);
                 } else {
-                    pendingRead.complete(event);
+                    return 0;
                 }
             }
             
-            return pendingRead;
-        }
-        
-        
-        
-       
-        private void consumeNetworkAndHandlePendingReads() {
             
-            synchronized (readLock) {
-
-                try {
-                    while (!pendingReads.isEmpty() && isNetworkdataAvailable() && (len = in.read(buf)) != -1) {
-                        
-                        for (SSEEvent event : parser.parse(ByteBuffer.wrap(buf, 0, len))) {
-         
-                            // get next pending read
-                            CompletableFuture<SSEEvent> pendingRead = pendingReads.poll();
-                            
-                            // further pendings?
-                            if (pendingRead == null) {
-                                // no, add event to buffer
-                                bufferedEvents.add(event);
-                                
-                            } else {
-                                // yes, complete it
-                                pendingRead.complete(event);
-                            }
-                        }
-                    }
-                    
-                } catch (IOException | RuntimeException t) {
-                   onError(t);
-                }                    
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                if (isNetworkdataAvailable()) {
+                    return super.read(b, off, len);
+                } else {
+                    return 0;
+                }
             }
-        }    
-        
-                
-        private boolean isNetworkdataAvailable() {
-            try {
-                return in.isReady();
-            } catch (IllegalStateException ise)  {
-                return false;
+            
+            
+            private boolean isNetworkdataAvailable() {
+                try {
+                    return is.isReady();
+                } catch (IllegalStateException ise)  {
+                    return false;
+                }
             }
         }
-    }
+    }    
 }
