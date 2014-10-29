@@ -5,7 +5,7 @@ reactive
 
 
 
-reactive.stream
+reactive-stream
 ---------------
 supports streaming based on reactive-streams.org
 
@@ -21,7 +21,7 @@ stream.consume(msg -> System.out.println(msg));
 
 
 
-reactive.see
+reactive-sse
 ---------------
 supports reactive-streams.org for servlet-api based Server-Sent Events streams
 
@@ -40,7 +40,7 @@ subscriber.onNext(...);
 ```
 
 
-reactive.kafka
+reactive-kafka
 ---------------
 supports reactive-streams.org for kafka 
 
@@ -58,7 +58,7 @@ subscriber.onNext(...);
 ```
 
 
-reactive.kafka.rest
+reactive-kafka-rest
 ---------------
 reactive Server-Sent Events adapter for kafka 
 
