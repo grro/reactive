@@ -11,6 +11,7 @@ supports streaming based on reactive-streams.org
 
 
 ```java
+Publisher<Message> publisher = ...
 ReadableStream<Message> stream = Streams.newStream(publisher);
 stream.consume(msg -> System.out.println(msg));       
 ...
