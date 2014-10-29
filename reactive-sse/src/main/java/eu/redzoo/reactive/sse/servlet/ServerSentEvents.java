@@ -39,11 +39,11 @@ public class ServerSentEvents {
     private ServerSentEvents() { }
     
     public static Publisher<SSEEvent> newPublisher(ServletInputStream in) {
-        return new ServletInputStreamSEEEventPublisher(in);
+        return new SEEEventPublisher(in);
     }
     
     public static Subscriber<SSEEvent> newSubscriber(ServletOutputStream out, ScheduledExecutorService executor) {
-        return new ServletOutputStreamSEEEventSubscriber(out, executor);
+        return new SEEEventSubscriber(out, executor);
     }
 }
 

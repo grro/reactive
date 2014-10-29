@@ -32,11 +32,11 @@ import com.google.common.io.Closeables;
 
 
 /**
- * ServerSentEventInputStream
+ * SSEInputStream
  * 
  * @author grro
  */
-public class ServerSentEventInputStream {
+public class SSEInputStream {
     
     // buffer
     private final Queue<SSEEvent> bufferedEvents = Lists.newLinkedList();
@@ -49,7 +49,7 @@ public class ServerSentEventInputStream {
     private final InputStream is;
 
     
-    public ServerSentEventInputStream(InputStream is) {
+    public SSEInputStream(InputStream is) {
         this.is = is;
     }
    
