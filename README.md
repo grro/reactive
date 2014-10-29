@@ -7,7 +7,7 @@ reactive
 
 reactive.stream
 ---------------
-supports reactive-streams.org for streaming
+supports streaming based on reactive-streams.org
 
 
 ```java
@@ -22,7 +22,7 @@ stream.consume(msg -> System.out.println(msg));
 
 reactive.see
 ---------------
-supports reactive-streams.org for servlet-api based server-sent-event streams
+supports reactive-streams.org for servlet-api based Server-Sent Events streams
 
 
 ```java
@@ -59,7 +59,7 @@ subscriber.onNext(...);
 
 reactive.kafka.rest
 ---------------
-supports reactive-streams.org for servlet-api based server-sent-event streams
+reactive Server-Sent Events adapter for kafka 
 
 
 ```java
@@ -86,9 +86,9 @@ supports reactive-streams.org for servlet-api based server-sent-event streams
     @GET
     @Produces("text/event-stream")
     public void produceSSEEventWithGroupIdAsync(@Context HttpServletResponse servletResponse, 
-                                     @PathParam("groupid") String groupid,
-                                     @Suspended AsyncResponse asyncResponse,
-                                     @PathParam("topic") String topic) throws IOException {
+                                                @PathParam("groupid") String groupid,
+                                                @Suspended AsyncResponse asyncResponse,
+                                                @PathParam("topic") String topic) throws IOException {
         
         Streams.newStream(Kafkas.newPublisher(topic, ImmutableMap.<String, String>builder().putAll(producerConfig).put("group.id", groupid).build()))
                .map(message -> SSEEvent.newEvent().id(message.getId()).data(message.getData()))
@@ -97,5 +97,4 @@ supports reactive-streams.org for servlet-api based server-sent-event streams
 ...
 
 ```
-
 
