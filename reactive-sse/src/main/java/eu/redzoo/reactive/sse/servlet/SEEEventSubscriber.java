@@ -72,7 +72,7 @@ class SEEEventSubscriber implements Subscriber<SSEEvent> {
     @Override
     public void onNext(SSEEvent event) {
         channel.writeEventAsnyc(event)           
-               .thenAccept(written -> channel.getWhenWritePossibleAsync()
+               .thenAccept(written -> channel.whenWritePossibleAsync()
                                              .thenAccept(Void -> requestNext())); 
     }
     
@@ -138,7 +138,7 @@ class SEEEventSubscriber implements Subscriber<SSEEvent> {
         }
         
         private void scheduleNextKeepAliveEvent() {
-            Runnable task = () -> channel.getWhenWritePossibleAsync()
+            Runnable task = () -> channel.whenWritePossibleAsync()
                                          .thenAccept(Void -> channel.writeEventAsnyc(SSEEvent.newEvent().comment("keep alive"))
                                                                     .thenAccept(written -> scheduleNextKeepAliveEvent()));
 

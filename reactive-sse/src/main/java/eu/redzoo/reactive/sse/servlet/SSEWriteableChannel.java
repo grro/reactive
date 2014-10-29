@@ -77,7 +77,7 @@ class SSEWriteableChannel {
     }
     
     
-    public CompletableFuture<Void> getWhenWritePossibleAsync() {
+    public CompletableFuture<Void> whenWritePossibleAsync() {
         CompletableFuture<Void> whenWritePossible = new CompletableFuture<Void>();
 
         synchronized (whenWritePossibles) {
