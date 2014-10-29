@@ -71,14 +71,16 @@ Content-Type: text/event-stream
 Transfer-Encoding: chunked
 Date: Wed, 29 Oct 2014 10:08:02 GMT
 
-id: 5
-data: test 5test
+id: 45545
+data: an event
 
-id: 6
-data: test 6test
+id: 45546
+data: another event
 
-id: 7
-data: test 7test
+: keep alive
+
+id: 45547
+data: ... event
 ```
 
 
