@@ -43,11 +43,11 @@ class SEEEventSubscriber implements Subscriber<SSEEvent> {
     private final AtomicBoolean isOpen = new AtomicBoolean(true);
     private final AtomicReference<Subscription> subscriptionRef = new AtomicReference<>(new IllegalStateSubscription());
     
-    private final SSEWriteabelChannel channel;
+    private final SSEWriteableChannel channel;
     
     
     public SEEEventSubscriber(ServletOutputStream out, ScheduledExecutorService executor) {
-        this.channel = new SSEWriteabelChannel(out, error -> onError(error));
+        this.channel = new SSEWriteableChannel(out, error -> onError(error));
         
         // start the keep alive emitter 
         new KeepAliveEmitter(channel, executor).start();
@@ -124,11 +124,11 @@ class SEEEventSubscriber implements Subscriber<SSEEvent> {
     private static final class KeepAliveEmitter {
         private final Duration noopPeriodSec = Duration.ofSeconds(35); 
         
-        private final SSEWriteabelChannel channel;
+        private final SSEWriteableChannel channel;
         private final ScheduledExecutorService executor;
 
         
-        public KeepAliveEmitter(SSEWriteabelChannel channel, ScheduledExecutorService executor) {
+        public KeepAliveEmitter(SSEWriteableChannel channel, ScheduledExecutorService executor) {
             this.channel = channel;
             this.executor = executor;
         }

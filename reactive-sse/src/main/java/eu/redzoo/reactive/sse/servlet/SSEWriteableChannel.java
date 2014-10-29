@@ -34,14 +34,14 @@ import eu.redzoo.reactive.sse.SSEEvent;
 
 
 
-class SSEWriteabelChannel {
+class SSEWriteableChannel {
     private static final List<CompletableFuture<Void>> whenWritePossibles = Lists.newArrayList();
     
     private final ServletOutputStream out;
     private final Consumer<Throwable> errorConsumer;
 
     
-    public SSEWriteabelChannel(ServletOutputStream out, Consumer<Throwable> errorConsumer) {
+    public SSEWriteableChannel(ServletOutputStream out, Consumer<Throwable> errorConsumer) {
         this.out = out;
         this.errorConsumer = errorConsumer;
         
