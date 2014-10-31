@@ -173,5 +173,20 @@ public interface SSEEvent {
         public String toString() {
             return toWire();
         }    
+        
+        
+        @Override
+        public boolean equals(Object other) {
+            if (other instanceof SSEEvent) {
+                return ((SSEEvent) other).toWire().equals(this.toWire());
+            } else {
+                return false;
+            }
+        }
+        
+        @Override
+        public int hashCode() {
+           return toWire().hashCode();
+        }
     }
 }

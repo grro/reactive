@@ -20,8 +20,11 @@ package eu.redzoo.reactive.sse.servlet;
 
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import javax.servlet.ServletOutputStream;
@@ -30,33 +33,48 @@ import javax.servlet.WriteListener;
 import com.google.common.collect.Lists;
 
 import eu.redzoo.reactive.sse.SSEEvent;
+import eu.redzoo.reactive.sse.SSEOutputStream;
 
 
 
 
-class SSEWriteableChannel {
-    private static final List<CompletableFuture<Void>> whenWritePossibles = Lists.newArrayList();
+public class SSEWriteableChannel {
+    private static final List<CompletableFuture<SSEWriteableChannel>> whenWritePossibles = Lists.newArrayList();
     
     private final ServletOutputStream out;
+    private final SSEOutputStream serverSentEventsStream;
     private final Consumer<Throwable> errorConsumer;
 
     
     public SSEWriteableChannel(ServletOutputStream out, Consumer<Throwable> errorConsumer) {
-        this.out = out;
-        this.errorConsumer = errorConsumer;
-        
-        out.setWriteListener(new ServletWriteListener());
+        this(out, errorConsumer, null);
     }
 
 
+    
+    public SSEWriteableChannel(ServletOutputStream out, Consumer<Throwable> errorConsumer, ScheduledExecutorService executor) {
+        this.out = out;
+        this.serverSentEventsStream = new SSEOutputStream(out);
+        this.errorConsumer = errorConsumer;
+        
+        out.setWriteListener(new ServletWriteListener());
+        
+        if (executor != null) {
+            // start the keep alive emitter 
+            new KeepAliveEmitter(this, executor).start();
+        }
+        
+        whenWritePossibleAsync().thenAccept(channel -> channel.flush());
+    }
+
+    
     public CompletableFuture<Integer> writeEventAsync(SSEEvent event) {       
         CompletableFuture<Integer> result = new CompletableFuture<>();
         
         try {
-            synchronized (out) {
+            synchronized (serverSentEventsStream) {
                 byte[] data = event.toWire().getBytes("UTF-8");
-                out.write(event.toWire().getBytes("UTF-8"));
-                out.flush();
+                serverSentEventsStream.write(event);
                 
                 result.complete(data.length);
             }
@@ -70,19 +88,28 @@ class SSEWriteableChannel {
     }   
 
     
+    private void flush() {
+        try {
+            serverSentEventsStream.flush();
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+    
+    
     public void close() {
         try {
-            out.close();
+            serverSentEventsStream.close();
         } catch (IOException ignore) { }
     }
     
     
-    public CompletableFuture<Void> whenWritePossibleAsync() {
-        CompletableFuture<Void> whenWritePossible = new CompletableFuture<Void>();
+    public CompletableFuture<SSEWriteableChannel> whenWritePossibleAsync() {
+        CompletableFuture<SSEWriteableChannel> whenWritePossible = new CompletableFuture<SSEWriteableChannel>();
 
         synchronized (whenWritePossibles) {
             if (isWritePossible()) {
-                whenWritePossible.complete(null);
+                whenWritePossible.complete(SSEWriteableChannel.this);
             } else {
                 // if not the WriteListener#onWritePossible will be called by the servlet conatiner later
                 whenWritePossibles.add(whenWritePossible);
@@ -93,9 +120,16 @@ class SSEWriteableChannel {
     }
     
 
+    
     private boolean isWritePossible() {
         
+        // triggers that write listener's onWritePossible will be called, if is possible to write data
+        // According to the Servlet 3.1 spec the onWritePossible will be invoked if and only if isReady() 
+        // method has been called and has returned false.
+        //
         // Unfortunately the Servlet 3.1 spec left it open how many bytes can be written
+        // Jetty for instance keeps a reference to the passed byte array and essentially owns it until the write is complete
+        
         try {
             return out.isReady();
         } catch (IllegalStateException ise)  {
@@ -110,7 +144,7 @@ class SSEWriteableChannel {
         public void onWritePossible() throws IOException {    
             
             synchronized (whenWritePossibles) {
-                whenWritePossibles.forEach(whenWritePossible -> whenWritePossible.complete(null));
+                whenWritePossibles.forEach(whenWritePossible -> whenWritePossible.complete(SSEWriteableChannel.this));
                 whenWritePossibles.clear();
             }
         }
@@ -119,5 +153,37 @@ class SSEWriteableChannel {
         public void onError(Throwable t) {
             errorConsumer.accept(t);
         }
-    }    
+    }  
+    
+    
+    
+    /**
+     * sents keep alive messages to keep the http connection alive in case of idling
+     * @author grro
+     */
+    private static final class KeepAliveEmitter {
+        private final Duration noopPeriodSec = Duration.ofSeconds(35); 
+        
+        private final SSEWriteableChannel channel;
+        private final ScheduledExecutorService executor;
+
+        
+        public KeepAliveEmitter(SSEWriteableChannel channel, ScheduledExecutorService executor) {
+            this.channel = channel;
+            this.executor = executor;
+        }
+        
+        public void start() {
+            scheduleNextKeepAliveEvent();
+        }
+        
+        private void scheduleNextKeepAliveEvent() {
+            Runnable task = () -> channel.whenWritePossibleAsync()
+                                         .thenAccept(Void -> channel.writeEventAsync(SSEEvent.newEvent().comment("keep alive"))
+                                                                    .thenAccept(written -> scheduleNextKeepAliveEvent()));
+
+            executor.schedule(task, noopPeriodSec.getSeconds(), TimeUnit.SECONDS);
+        }
+        
+    }
 }

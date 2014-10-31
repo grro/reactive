@@ -15,8 +15,8 @@
  */
 package eu.redzoo.reactive.sse;
 
+import java.io.Closeable;
 import java.io.IOException;
-
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -36,7 +36,7 @@ import com.google.common.io.Closeables;
  * 
  * @author grro
  */
-public class SSEInputStream {
+public class SSEInputStream implements Closeable {
     
     // buffer
     private final Queue<SSEEvent> bufferedEvents = Lists.newLinkedList();
@@ -65,7 +65,7 @@ public class SSEInputStream {
         if (bufferedEvents.isEmpty()) {
             
             // read network
-            while (bufferedEvents.isEmpty() && (len = is.read(buf)) != -1) {            
+            while (bufferedEvents.isEmpty() && (len = is.read(buf)) > 0) {            
                 parser.parse(ByteBuffer.wrap(buf, 0, len)).forEach(event -> bufferedEvents.add(event)); 
             }    
         }

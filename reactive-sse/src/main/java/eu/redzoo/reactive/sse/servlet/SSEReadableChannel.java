@@ -29,21 +29,27 @@ import java.util.function.Consumer;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 
-import com.google.common.collect.Lists;
+import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.Queues;
 
 import eu.redzoo.reactive.sse.SSEEvent;
 import eu.redzoo.reactive.sse.SSEInputStream;
 
 
 
-
-class SSEReadableChannel {
-    private final Queue<CompletableFuture<SSEEvent>> pendingReads = Lists.newLinkedList();
+ 
+public class SSEReadableChannel {
+    private final Queue<CompletableFuture<SSEEvent>> pendingReads = Queues.newLinkedBlockingQueue();
 
     private final SSEInputStream serverSentEventsStream;
     
     private final Consumer<Throwable> errorConsumer;
     private final Consumer<Void> completionConsumer;
+    
+    // statistics 
+    private long numProcessedImmediate = 0;
+    private long numProcessedPendings = 0;
 
     
     
@@ -86,6 +92,7 @@ class SSEReadableChannel {
                 
                 // got an event?
                 if (optionalEvent.isPresent()) {
+                    numProcessedImmediate++;
                     pendingRead.complete(optionalEvent.get());
                  
                 // no, queue the pending read request    
@@ -106,11 +113,11 @@ class SSEReadableChannel {
     private void proccessPendingReads() {
         
         synchronized (pendingReads) {
-            
             try {
                 while(!pendingReads.isEmpty()) {
                     Optional<SSEEvent> optionalEvent = serverSentEventsStream.next();
                     if (optionalEvent.isPresent()) {
+                        numProcessedPendings++;
                         pendingReads.poll().complete(optionalEvent.get());
                     } else {
                         return;
@@ -137,6 +144,18 @@ class SSEReadableChannel {
         }
     }
     
+    
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                          .add("completionConsumer", completionConsumer)
+                          .add("errorConsumer", errorConsumer)
+                          .add("pendingReads", Joiner.on(", ").join(pendingReads))
+                          .add("numProcessedTotal", numProcessedImmediate + numProcessedPendings)
+                          .add("numProcessedImmediate", numProcessedImmediate)
+                          .add("numProcessedPendings", numProcessedPendings)
+                          .toString();
+    }
     
     
     private static final class NonBlockingInputStream extends FilterInputStream  {

@@ -19,9 +19,7 @@ package eu.redzoo.reactive.sse.servlet;
 
 
 
-import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
@@ -47,10 +45,7 @@ class SEEEventSubscriber implements Subscriber<SSEEvent> {
     
     
     public SEEEventSubscriber(ServletOutputStream out, ScheduledExecutorService executor) {
-        this.channel = new SSEWriteableChannel(out, error -> onError(error));
-        
-        // start the keep alive emitter 
-        new KeepAliveEmitter(channel, executor).start();
+        this.channel = new SSEWriteableChannel(out, error -> onError(error), executor);
     }   
 
 
@@ -112,38 +107,5 @@ class SEEEventSubscriber implements Subscriber<SSEEvent> {
         public void cancel() {
             throw new IllegalStateException();
         }
-    }
-
-
-    
-    
-    /**
-     * sents keep alive messages to keep the http connection alive in case of idling
-     * @author grro
-     */
-    private static final class KeepAliveEmitter {
-        private final Duration noopPeriodSec = Duration.ofSeconds(35); 
-        
-        private final SSEWriteableChannel channel;
-        private final ScheduledExecutorService executor;
-
-        
-        public KeepAliveEmitter(SSEWriteableChannel channel, ScheduledExecutorService executor) {
-            this.channel = channel;
-            this.executor = executor;
-        }
-        
-        public void start() {
-            scheduleNextKeepAliveEvent();
-        }
-        
-        private void scheduleNextKeepAliveEvent() {
-            Runnable task = () -> channel.whenWritePossibleAsync()
-                                         .thenAccept(Void -> channel.writeEventAsync(SSEEvent.newEvent().comment("keep alive"))
-                                                                    .thenAccept(written -> scheduleNextKeepAliveEvent()));
-
-            executor.schedule(task, noopPeriodSec.getSeconds(), TimeUnit.SECONDS);
-        }
-        
     }
 }
