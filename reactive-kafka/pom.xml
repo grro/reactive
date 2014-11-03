@@ -30,14 +30,6 @@
 
 	<dependencies>
 
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
-			<version>0.8.2-beta</version>
-		</dependency>
-
-
-
 		<!-- ///////////////////////// -->
 		<!-- /// TEST dependencies /// -->
 		<!-- ///////////////////////// -->
