@@ -2,6 +2,7 @@
 reactive
 ======
 
+PLEASE NOTE that the development has been stopped. This project will be removed
 
 
 
